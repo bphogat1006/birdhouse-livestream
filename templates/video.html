@@ -1,0 +1,45 @@
+{% extends 'template.html' %}
+
+{% block header %}
+    <style>
+        div {
+            width: 100%;
+        }
+        #video {
+            width: 100%;
+            box-shadow: 0 3px 8px 0 rgba(0, 0, 0, 0.3), 0 6px 20px 0 rgba(0, 0, 0, 0.3);
+        }
+        #delete {
+            background-color: red;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div>
+        <video id="video" autoplay controls muted="muted">
+            <source src="{{ filename }}" type="video/mp4">
+        </video>
+    </div>
+
+    <h2>Video: <span style="font-weight: 100;">{{ description }}</span></h2>
+    <a href="{{ filename }}" download>Download Video</a>
+
+    <br>
+
+    <form action="/video" method="POST">
+        <p>Edit Description <span style="color: gray;">(letters, numbers, and underscores only)</span></p>
+        <input type="text" name="description" pattern="\w+" autocomplete="off">
+        <input type="hidden" name="filename" value="{{ filename }}">
+        <input type="submit" value="Submit">
+    </form>
+
+    <br>
+
+    <form action="/delete" method="POST">
+        <input type="hidden" name="filename" value="{{ filename }}">
+        <input id="delete" type="submit" value="Delete">
+    </form>
+
+    <br><br>
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends 'template.html' %}
+
+{% block header %}
+    <style>
+        #stream-div {
+            width: 100%;
+        }
+        #stream {
+            width: 100%;
+            box-shadow: 0 3px 8px 0 rgba(0, 0, 0, 0.3), 0 6px 20px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        #form-div {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            width: min-content;
+            margin: 1rem auto;
+        }
+        form {
+            display: inline;
+            margin-right: 1rem;
+        }
+        input[type=submit] {
+            font-size: 1rem;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+        }
+
+        #images-div {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+        #images-div > div {
+            display: flex;
+            flex-direction: column;
+            flex-wrap: nowrap;
+            width: 15rem;
+            margin: 0 1rem;
+        }
+        .image {
+            width: 100%;
+            box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.3), 0 4px 20px 0 rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+        }
+
+        #videos-div > * {
+            display: inline;
+        }
+        #videos-div > a {
+            color: blue
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div id="stream-div">
+        <img id="stream" src="{{ url_for('stream') }}">
+    </div>
+
+    <br>
+    
+    <div id="form-div">
+        <form action="{{ url_for( 'record' ) }}" method="POST">
+            <input
+                style="background-color: {{ 'red' if is_recording else 'white' }};"
+                type="submit"
+                value="{{ 'Stop Recording' if is_recording else 'Start Recording' }}">
+        </form>
+
+        <form action="{{ url_for( 'take_picture' ) }}" method="POST">
+            <input style="background-color: white;" type="submit" value="Take Picture">
+        </form>
+    </div>
+
+    <h2>Pictures</h2>
+    <div id="images-div">
+        {% for image in images %}
+            <div>
+                <a href="/picture?v={{ image.filename }}">
+                    <img class="image" src="{{ image.filename }}">
+                </a>
+                <p>{{ image.date }}</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <h2>Videos</h2>
+    <div id="videos-div">
+        {% for video in videos %}
+            <a href="/video?v={{ video.filename }}">{{ video.description }}</a> - 
+            <p>{{ video.date }}</p>
+            <br>
+        {% endfor %}
+    </div>
+
+    <br><br>
+{% endblock %}

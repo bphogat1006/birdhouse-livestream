@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+	<head>
+        <title>POONGA BIRD LIVESTREAM</title>
+		<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+		<style>
+			html {
+				font-size: 20px;
+			}
+			body {
+				margin: 1rem 6rem;
+				background-color: #eef;
+			}
+			input {
+				font-size: 1rem;
+			}
+		</style>
+		{% block header %}{% endblock %}
+	</head>
+
+	<body>
+		{% block body %}{% endblock %}
+	</body>
+</html>
