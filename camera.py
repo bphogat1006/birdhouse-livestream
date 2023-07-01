@@ -12,7 +12,7 @@ class Camera:
 
     def __init__(self, camera_is_recording: mp.Value):
         self.picam2 = Picamera2()
-        fps = 200
+        fps = 20
         height_main = 1080
         height_lores = 432
         aspect_ratio = 16/9
