@@ -70,7 +70,7 @@ def toggle_recording():
 
 # run all camera processes in separate process
 def camera_process(np_frame, new_frame_event, capture_image_event, toggle_recording_event, camera_is_recording):
-    from camera import Camera
+    from camera_setup import Camera
     import asyncio
     camera = Camera(camera_is_recording)
 

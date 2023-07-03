@@ -4,7 +4,7 @@ import time
 from threading import Lock
 from flask import Flask, request, render_template, Response, redirect, url_for
 from camera_handler import get_stream_frame, capture_image, toggle_recording, camera_is_recording
-from camera import Camera
+from camera_setup import Camera
 
 
 app = Flask(__name__)
