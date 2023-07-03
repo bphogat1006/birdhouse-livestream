@@ -10,8 +10,8 @@ lores_frame_shape = (432, 768, 3)
 
 # background subtractor (motion detection)
 backsub_frame_counter = 0
-backsub_update_freq = 10
-backsub_history = 3
+backsub_update_freq = 10 # every n frames
+backsub_history = 50
 backsub = cv2.createBackgroundSubtractorMOG2(detectShadows=False, history=backsub_history)
 
 def trigger_backsub_update():
@@ -21,7 +21,7 @@ def trigger_backsub_update():
     return trigger
 
 def get_stream_frame():
-    # get frame and convert to usable format
+    # get frame
     new_frame_event.wait()
     frame = np_frame.copy()
     new_frame_event.clear()
