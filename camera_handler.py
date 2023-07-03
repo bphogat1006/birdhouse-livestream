@@ -3,10 +3,7 @@ import multiprocessing as mp
 import ctypes
 import cv2
 from time import time
-
-
-# camera lores frame dimensions
-lores_frame_shape = (432, 768, 3)
+from camera_setup import Camera
 
 # background subtractor (motion detection)
 backsub_frame_counter = 0
@@ -35,7 +32,7 @@ def get_stream_frame():
     return compress_jpg(frame)
 
 def process_backsub_frame(frame):
-    frame = cv2.resize(frame, np.array([lores_frame_shape[1], lores_frame_shape[0]]) // 2, interpolation=cv2.INTER_NEAREST)
+    frame = cv2.resize(frame, np.array([Camera.size_lores[1], Camera.size_lores[0]]) // 2, interpolation=cv2.INTER_NEAREST)
     frame = cv2.GaussianBlur(frame, (21, 21), 0)
     fgmask = backsub.apply(frame)
     motion_factor = ( np.sum(fgmask)/255 / np.prod(fgmask.shape) ) ** 0.25
@@ -51,8 +48,8 @@ def compress_jpg(frame):
 # multiprocessing/camera stuff
 
 # shared data
-mp_frame = mp.Array(ctypes.c_ubyte, int(np.prod(lores_frame_shape)), lock=mp.Lock())
-np_frame = np.frombuffer(mp_frame.get_obj(), dtype=ctypes.c_ubyte).reshape(lores_frame_shape)
+mp_frame = mp.Array(ctypes.c_ubyte, int(np.prod(Camera.size_lores)), lock=mp.Lock())
+np_frame = np.frombuffer(mp_frame.get_obj(), dtype=ctypes.c_ubyte).reshape(Camera.size_lores)
 # events
 new_frame_event = mp.Event()
 toggle_recording_event = mp.Event()

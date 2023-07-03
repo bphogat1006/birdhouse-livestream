@@ -9,23 +9,20 @@ import multiprocessing as mp
 
 class Camera:
     captures_folder = 'static/captures/'
+    size_main = (1080, 1920, 3)
+    size_lores = (432, 768, 3)
 
     def __init__(self, camera_is_recording: mp.Value):
         self.picam2 = Picamera2()
         fps = 20
-        height_main = 1080
-        height_lores = 432
-        aspect_ratio = 16/9
-        size_main = (int(height_main*aspect_ratio), height_main)
-        size_lores = (int(height_lores*aspect_ratio), height_lores)
 
         self.config = self.picam2.create_video_configuration(
             main={
-                'size': size_main,
+                'size': [Camera.size_main[1], Camera.size_main[0]],
                 'format': 'RGB888'
             },
             lores={
-                'size': size_lores,
+                'size': [Camera.size_lores[1], Camera.size_lores[0]],
                 'format': 'YUV420' # default
             },
             encode='main',
@@ -82,4 +79,5 @@ if __name__ == '__main__':
     print(cam.config)
     size_main = cam.capture_main().shape
     size_lores = cam.capture_lores().shape
-    print(size_main, size_lores)
+    print(size_main, Camera.size_main)
+    print(size_lores, Camera.size_lores)
