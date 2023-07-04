@@ -28,12 +28,15 @@ mp_frame = mp.Array(ctypes.c_ubyte, int(np.prod(Camera.size_lores)), lock=mp.Loc
 np_frame = np.frombuffer(mp_frame.get_obj(), dtype=ctypes.c_ubyte).reshape(Camera.size_lores)
 camera_is_recording = mp.Value('B', lock=True) # 'B' = unsigned byte
 camera_is_recording.value = False
+camera_focus_value = mp.Value('f', lock=True) # 'f' = float
+camera_focus_value.value = Camera.default_focus_value
 
 # events
 new_frame_event = mp.Event()
 toggle_recording_event = mp.Event()
 capture_image_event = mp.Event()
 update_backsub_event = mp.Event()
+camera_focus_event = mp.Event()
 
 # trigger camera events
 def capture_image():
@@ -45,9 +48,16 @@ def toggle_recording():
 def trigger_backsub_update():
     update_backsub_event.set()
 
+def adjust_focus(value):
+    camera_focus_value.value = value
+    camera_focus_event.set()
+
 # function to run background subtraction (motion detection) in separate process
 def motion_detection_process(update_backsub_event, np_frame):
     import requests
+
+    def log_error(type, description):
+        print(f'Motion Logging Error [{type}]: {description}')
     
     def log_activity(motion_factor):
         # destination address to send activity log
@@ -56,17 +66,16 @@ def motion_detection_process(update_backsub_event, np_frame):
         # send data
         try:
             r = requests.post(dest_url, data=str(motion_factor), timeout=(4))
-            print(r)
+            if r.status_code >= 400:
+                raise requests.exceptions.HTTPError(f'Response code: {r.status_code}')
+        except requests.exceptions.HTTPError as e:
+            log_error('HTTPError', e)
         except requests.exceptions.ReadTimeout as e:
-            print('[ReadTimeout]', e, sep='\n')
+            log_error('ReadTimeout', e)
         except requests.exceptions.ConnectionError as e:
-            print('[ConnectionError]', e, sep='\n')
+            log_error('ConnectionError', e)
     
-    backsub_frame_counter = 0
-    backsub_update_freq = 10 # every n frames
-    backsub_history = 50
-    backsub = cv2.createBackgroundSubtractorMOG2(detectShadows=False, history=backsub_history)
-    
+    backsub = cv2.createBackgroundSubtractorMOG2(detectShadows=False, history=50)
     while 1:
         # get camera frame
         new_frame_event.wait()
@@ -77,21 +86,17 @@ def motion_detection_process(update_backsub_event, np_frame):
         frame = cv2.GaussianBlur(frame, (21, 21), 0)
         fgmask = backsub.apply(frame)
         
-        # calculate amount of motion
-        motion_factor = ( np.sum(fgmask)/255 / np.prod(fgmask.shape) ) # calculate ratio of white to black pixels
-        motion_factor = motion_factor ** 0.25 # scale up smaller values
-        log_activity(motion_factor)
+        # calculate amount of motion (ratio of white to black pixels)
+        motion_factor = ( np.sum(fgmask)/255 / np.prod(fgmask.shape) )
 
-        # debugging
-        if 1:
-            motion_percentage = round(motion_factor * 100)
-            print('#'*motion_percentage, '*'*(100-motion_percentage))
+        # send data to logging device
+        log_activity(motion_factor)
 
         # delay
         sleep(0.5)
 
 # function to run all camera capture functions in separate process
-def camera_process(np_frame, new_frame_event, capture_image_event, toggle_recording_event, camera_is_recording):
+def camera_process(np_frame, new_frame_event, capture_image_event, toggle_recording_event, camera_is_recording, camera_focus_event, camera_focus_value):
     from camera_setup import Camera
     import asyncio
 
@@ -127,13 +132,19 @@ def camera_process(np_frame, new_frame_event, capture_image_event, toggle_record
     async def video_auto_cutoff_checker():
         while 1:
             camera.recording_auto_cutoff()
-            await asyncio.sleep(10)
+            await asyncio.sleep(5)
+    
+    async def focus_loop():
+        while 1:
+            await event(camera_focus_event)
+            camera.adjust_focus(camera_focus_value.value)
 
     async def main():
         asyncio.create_task(streaming_loop())
         asyncio.create_task(capture_image_loop())
         asyncio.create_task(capture_video_loop())
         asyncio.create_task(video_auto_cutoff_checker())
+        asyncio.create_task(focus_loop())
 
         while 1:
             await asyncio.sleep(9999) # run forever
@@ -142,4 +153,4 @@ def camera_process(np_frame, new_frame_event, capture_image_event, toggle_record
 
 # start processes
 mp.Process(target=motion_detection_process, args=(update_backsub_event, np_frame)).start()
-mp.Process(target=camera_process, args=(np_frame, new_frame_event, capture_image_event, toggle_recording_event, camera_is_recording)).start()
+mp.Process(target=camera_process, args=(np_frame, new_frame_event, capture_image_event, toggle_recording_event, camera_is_recording, camera_focus_event, camera_focus_value)).start()

@@ -3,11 +3,11 @@ import re
 import time
 from threading import Lock
 from flask import Flask, request, render_template, Response, redirect, url_for
-from camera_handler import get_stream_frame, capture_image, toggle_recording, camera_is_recording
+from camera_handler import get_stream_frame, capture_image, toggle_recording, camera_is_recording, adjust_focus, camera_focus_value
 from camera_setup import Camera
 
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', template_folder='templates')
 
 filename_pattern = r'(.+\/)+(\w+)_(\d+).(jpg|mp4)'
 def filename_regex(filename):
@@ -39,7 +39,7 @@ def index():
                 'date': date_string,
                 'description': filename_regex(filename)['description']
             })
-    return render_template('stream.html', images=images, videos=videos, is_recording=camera_is_recording.value)
+    return render_template('stream.html', images=images, videos=videos, is_recording=camera_is_recording.value, camera_focus_value=camera_focus_value.value)
 
 get_frame_lock = Lock()
 def camera_frames_gen():
@@ -52,8 +52,7 @@ def camera_frames_gen():
 
 @app.route('/stream')
 def stream():
-    return Response(camera_frames_gen(),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(camera_frames_gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/record', methods=['POST'])
 def record():
@@ -95,6 +94,12 @@ def delete_capture():
     filename = request.form.get('filename')
     os.remove(filename)
     return redirect(url_for('index'))
+
+@app.route('/focus', methods=['POST'])
+def focus():
+    value = float(request.data)
+    adjust_focus(value)
+    return Response(status=200)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000)

@@ -14,6 +14,7 @@
             display: flex;
             flex-direction: row;
             flex-wrap: nowrap;
+            align-items: center;
             width: min-content;
             margin: 1rem auto;
         }
@@ -73,6 +74,26 @@
         <form action="{{ url_for( 'take_picture' ) }}" method="POST">
             <input style="background-color: white;" type="submit" value="Take Picture">
         </form>
+
+        Focus: 
+        <input
+            type="range"
+            name="value"
+            value="{{ camera_focus_value }}"
+            min="0"
+            max="35"
+            step="0.5"
+            oninput="javascript: fetch('/focus', {method: 'POST', body: this.value})"
+        >
+    </div>
+
+    <h2>Videos</h2>
+    <div id="videos-div">
+        {% for video in videos %}
+            <a href="/video?v={{ video.filename }}">{{ video.description }}</a> - 
+            <p>{{ video.date }}</p>
+            <br>
+        {% endfor %}
     </div>
 
     <h2>Pictures</h2>
@@ -84,15 +105,6 @@
                 </a>
                 <p>{{ image.date }}</p>
             </div>
-        {% endfor %}
-    </div>
-
-    <h2>Videos</h2>
-    <div id="videos-div">
-        {% for video in videos %}
-            <a href="/video?v={{ video.filename }}">{{ video.description }}</a> - 
-            <p>{{ video.date }}</p>
-            <br>
         {% endfor %}
     </div>
 

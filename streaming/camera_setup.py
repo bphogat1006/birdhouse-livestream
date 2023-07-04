@@ -11,6 +11,7 @@ class Camera:
     captures_folder = 'static/captures/'
     size_main = (1080, 1920, 3)
     size_lores = (432, 768, 3)
+    default_focus_value = 2
 
     def __init__(self, camera_is_recording: mp.Value):
         self.picam2 = Picamera2()
@@ -30,7 +31,7 @@ class Camera:
             controls={
                 'AfMode': controls.AfModeEnum.Manual,
                 'AfRange': controls.AfRangeEnum.Full,
-                'LensPosition': 2,
+                'LensPosition': Camera.default_focus_value,
                 'FrameDurationLimits': [int(1/fps*1000000), int(1/fps*1000000)]
             },
             buffer_count=1
@@ -73,6 +74,10 @@ class Camera:
         duration = time() - self.__recording_start
         if duration > self.__max_recording_duration:
             self.toggle_recording()
+
+    def adjust_focus(self, value):
+        value = min(35, max(0, value))
+        self.picam2.set_controls({"LensPosition": value})
     
 if __name__ == '__main__':
     cam = Camera(None)
