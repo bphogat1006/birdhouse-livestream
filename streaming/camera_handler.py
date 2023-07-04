@@ -55,10 +55,12 @@ def motion_detection_process(update_backsub_event, np_frame):
 
         # send data
         try:
-            r = requests.post(dest_url, str(motion_factor))
+            r = requests.post(dest_url, data=str(motion_factor), timeout=(4))
             print(r)
-        except Exception as e:
-            pass
+        except requests.exceptions.ReadTimeout as e:
+            print('[ReadTimeout]', e, sep='\n')
+        except requests.exceptions.ConnectionError as e:
+            print('[ConnectionError]', e, sep='\n')
     
     backsub_frame_counter = 0
     backsub_update_freq = 10 # every n frames
