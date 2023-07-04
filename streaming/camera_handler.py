@@ -107,12 +107,12 @@ def camera_process(np_frame, new_frame_event, capture_image_event, toggle_record
             if mp_event.is_set():
                 mp_event.clear()
                 break
-            await asyncio.sleep(0)
+            await asyncio.sleep(0.005)
 
     async def streaming_loop():
         while 1:
             # Get the captured frame as a numpy array
-            await asyncio.sleep(0)
+            await asyncio.sleep(0.005)
             if new_frame_event.is_set():
                 continue
             np_frame[:] = camera.capture_lores()
