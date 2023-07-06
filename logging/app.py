@@ -11,8 +11,10 @@ DB_NAME = 'bird.sqlite3'
 
 
 # sqlite setup
-conn = sqlite3.connect(DB_NAME)
-with conn:
+def get_db_connection():
+    return sqlite3.connect(DB_NAME)
+
+with get_db_connection() as conn:
     conn.execute('CREATE TABLE IF NOT EXISTS motion_logs ( time FLOAT, motion FLOAT )')
 
 
@@ -22,11 +24,11 @@ with conn:
 def display_motion_data():
     while 1:
         # get data
-        motion_data = generate_sums(NUM_DATA_CHUNKS, sqlite3.connect(DB_NAME))
+        motion_data = generate_sums(NUM_DATA_CHUNKS, get_db_connection())
         print(motion_data)
         # TODO draw graph on display
         # delay
-        sleep(100)
+        sleep(10)
 
 # continuously update time on display
 def update_time():
@@ -51,7 +53,8 @@ def log():
     # motion_factor = motion_factor ** 0.25
 
     # insert into db
-    conn.execute('INSERT INTO motion_logs (time, motion) VALUES (?, ?)', (time(), motion_factor))
+    with get_db_connection() as conn:
+        res = conn.execute('INSERT INTO motion_logs (time, motion) VALUES (?, ?)', (time(), motion_factor))
 
     print('motion_factor', motion_factor)
     return Response(status=200)
