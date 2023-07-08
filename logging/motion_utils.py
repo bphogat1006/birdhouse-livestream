@@ -38,7 +38,6 @@ def generate_test_data():
 # generate sums for each interval over the last 24 hours
 def get_motion_data(num_chunks: int, conn: sqlite3.Connection):
     interval = timedelta(days=1/num_chunks).total_seconds()
-    num_logs_expected = interval * 2 # there are expected to be 2 logs per second (max)
     now = time()
     t1 = now - timedelta(days=1).total_seconds()
     
@@ -60,8 +59,6 @@ def get_motion_data(num_chunks: int, conn: sqlite3.Connection):
             motion_data.append(0)
             continue
         
-        # calculate weighted sum to account for potential missing logs
-        motion_sum = num_logs_expected / num_logs * motion_sum
         motion_data.append(motion_sum)
 
     # check if there was motion in the last minute
@@ -69,12 +66,12 @@ def get_motion_data(num_chunks: int, conn: sqlite3.Connection):
     with conn:
         res = conn.execute('SELECT SUM(motion) FROM motion_logs WHERE time >= ?', [t])
     thresh = 1
-    recent_motion = res.fetchone()[0]
-    if recent_motion is None:
-        recent_motion = False
+    motion_detected = res.fetchone()[0]
+    if motion_detected is None:
+        motion_detected = False
     else:
-        recent_motion = recent_motion > thresh
-    return motion_data, recent_motion
+        motion_detected = motion_detected > thresh
+    return motion_data, motion_detected
 
 if __name__ == '__main__':
     generate_test_data()

@@ -1,4 +1,5 @@
 from datetime import datetime
+from time import sleep
 import digitalio
 import board
 from adafruit_rgb_display import st7789
@@ -43,8 +44,8 @@ def display_motion_data():
 
     while 1:
         # get data
-        motion_data, recent_motion = get_motion_data(NUM_DATA_CHUNKS, get_db_connection())
-        max_height = max(max(motion_data), 75)
+        motion_data, motion_detected = get_motion_data(NUM_DATA_CHUNKS, get_db_connection())
+        max_height = max(max(motion_data), 100)
         motion_data = [i/max_height for i in motion_data]
 
         # draw graph on display
@@ -63,7 +64,7 @@ def display_motion_data():
             draw.text((x, y), str(hours[i]), fill=(255, 255, 255), font=ImageFont.truetype('arial.ttf', size=20))
 
         # display banner if there has been any recent motion
-        if 1:
+        if motion_detected:
             y = size/2 + 35
             draw_rect((0, y-45, size, 90), fill=(255,100,100))
             draw.multiline_text((size/2, y), 'MOTION\nDETECTED', anchor='mm', align='center', fill=(0,0,0), font=ImageFont.truetype('arial.ttf', size=40))
@@ -74,3 +75,6 @@ def display_motion_data():
 
         # draw image to display
         display.image(image)
+
+        # delay
+        sleep(5)
