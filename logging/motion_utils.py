@@ -32,6 +32,10 @@ def generate_sums(num_chunks: int, conn: sqlite3.Connection):
     num_logs_expected = interval * 2 # there are expected to be 2 logs per second (max)
     now = time()
     t1 = now - timedelta(days=1).total_seconds()
+    # remove old logs
+    with conn:
+        conn.execute('DELETE FROM motion_logs WHERE time < ?', [t1])
+    # gather motion data
     motion_data = []
     while t1 < now:
         # get sum of all logs in the given time interval
