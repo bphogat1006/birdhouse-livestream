@@ -25,7 +25,6 @@ def display_motion_data():
     while 1:
         # get data
         motion_data = generate_sums(NUM_DATA_CHUNKS, get_db_connection())
-        print(motion_data)
         # TODO draw graph on display
         # delay
         sleep(10)
@@ -44,6 +43,12 @@ Thread(target=update_time).start()
 # flask
 app = Flask(__name__)
 
+@app.route('/')
+def index():
+    data = generate_sums(NUM_DATA_CHUNKS, get_db_connection())
+    res = [f'{str(i+1).zfill(2)}: {sum}<br>' for i,sum in enumerate(data)]
+    return Response(res)
+
 @app.route('/log', methods=['POST'])
 def log():
     # retrieve data
@@ -60,4 +65,4 @@ def log():
     return Response(status=200)
 
 if __name__ == '__main__':
-    app.run(port=3001)
+    app.run(host='0.0.0.0', port=3001)
