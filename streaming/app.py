@@ -3,11 +3,23 @@ import re
 import time
 from threading import Lock
 from flask import Flask, request, render_template, Response, redirect, url_for
+from flask_httpauth import HTTPBasicAuth
+from werkzeug.security import generate_password_hash, check_password_hash
 from camera_handler import get_stream_frame, capture_image, toggle_recording, camera_is_recording, adjust_focus, camera_focus_value
 from camera_setup import Camera
 
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
+auth = HTTPBasicAuth()
+users = {
+    "poonga": generate_password_hash("bird"),
+}
+
+@auth.verify_password
+def verify_password(username, password):
+    if username in users and \
+            check_password_hash(users.get(username), password):
+        return username
 
 filename_pattern = r'(.+\/)+(\w+)_(\d+).(jpg|mp4)'
 def filename_regex(filename):
@@ -19,6 +31,7 @@ def filename_regex(filename):
     }
 
 @app.route('/')
+@auth.login_required
 def index():
     images = []
     videos = []
