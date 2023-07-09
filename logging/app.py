@@ -13,8 +13,8 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    data = get_motion_data(NUM_DATA_CHUNKS, get_db_connection())
-    res = [f'{str(i+1).zfill(2)}: {sum}<br>' for i,sum in enumerate(data)]
+    motion_data, motion_detected = get_motion_data(NUM_DATA_CHUNKS, get_db_connection())
+    res = [str(motion_detected)] + [f'{str(i+1).zfill(2)}: {sum}<br>' for i,sum in enumerate(motion_data)]
     return Response(res)
 
 @app.route('/log', methods=['POST'])
