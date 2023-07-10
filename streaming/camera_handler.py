@@ -61,7 +61,7 @@ def motion_detection_process(update_backsub_event, np_frame):
     
     def log_activity(motion_factor):
         # destination address to send activity log
-        dest_url = 'http://192.168.1.155:3001/log'
+        dest_url = 'http://192.168.1.120:3001/log'
 
         # send data
         try:
