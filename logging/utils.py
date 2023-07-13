@@ -24,7 +24,7 @@ def get_motion_data():
     t1 = now - timedelta(days=1).total_seconds()
     
     # remove old logs
-    with conn:
+    with get_db_connection() as conn:
         conn.execute('DELETE FROM motion_logs WHERE time < ?', [t1])
         
     # gather 24hr motion data
