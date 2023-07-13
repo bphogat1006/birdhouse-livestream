@@ -1,11 +1,59 @@
-from datetime import datetime
-from time import sleep
+from datetime import datetime, timedelta
+from time import sleep, time
+import sqlite3
 import digitalio
 import board
 from adafruit_rgb_display import st7789
 from PIL import Image, ImageDraw, ImageFont
-from motion_utils import get_db_connection, get_motion_data, NUM_DATA_CHUNKS
 
+
+# constants
+NUM_DATA_CHUNKS = 24*2
+DB_NAME = 'bird.sqlite3'
+
+# sqlite setup
+def get_db_connection():
+    return sqlite3.connect(DB_NAME)
+with get_db_connection() as conn:
+    conn.execute('CREATE TABLE IF NOT EXISTS motion_logs ( time FLOAT, motion FLOAT )')
+
+# generate sums for each interval over the last 24 hours
+def get_motion_data():
+    interval = timedelta(days=1/NUM_DATA_CHUNKS).total_seconds()
+    now = time()
+    t1 = now - timedelta(days=1).total_seconds()
+    
+    # remove old logs
+    with conn:
+        conn.execute('DELETE FROM motion_logs WHERE time < ?', [t1])
+        
+    # gather 24hr motion data
+    motion_data = []
+    while t1 < now:
+        # get sum of all logs in the given time interval
+        with get_db_connection() as conn:
+            res = conn.execute('SELECT COUNT(motion), SUM(motion) FROM motion_logs WHERE time >= ? AND time < ?', (t1, t1+interval))
+        num_logs, motion_sum = res.fetchone()
+        t1 += interval
+        
+        # if no logs found for this time interval, sum is 0
+        if not num_logs:
+            motion_data.append(0)
+            continue
+        
+        motion_data.append(motion_sum)
+
+    # check if there was motion in the last minute
+    t = now - timedelta(minutes=1).total_seconds()
+    with get_db_connection() as conn:
+        res = conn.execute('SELECT SUM(motion) FROM motion_logs WHERE time >= ?', [t])
+    thresh = 1
+    motion_detected = res.fetchone()[0]
+    if motion_detected is None:
+        motion_detected = False
+    else:
+        motion_detected = motion_detected > thresh
+    return motion_data, motion_detected
 
 def display_motion_data():
     cs_pin = digitalio.DigitalInOut(board.CE0)
@@ -44,7 +92,7 @@ def display_motion_data():
 
     while 1:
         # get data
-        motion_data, motion_detected = get_motion_data(NUM_DATA_CHUNKS, get_db_connection())
+        motion_data, motion_detected = get_motion_data()
         max_height = max(max(motion_data), 100)
         motion_data = [i/max_height for i in motion_data]
 

@@ -1,8 +1,7 @@
 from flask import Flask, Response, request
-from motion_utils import get_db_connection, get_motion_data, NUM_DATA_CHUNKS
 from threading import Thread
 from time import time
-from update_display import display_motion_data
+from utils import get_db_connection, get_motion_data, display_motion_data
 
 
 # continuously update display with motion data
@@ -13,7 +12,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    motion_data, motion_detected = get_motion_data(NUM_DATA_CHUNKS, get_db_connection())
+    motion_data, motion_detected = get_motion_data()
     res = [str(motion_detected)] + [f'{str(i+1).zfill(2)}: {sum}<br>' for i,sum in enumerate(motion_data)]
     return Response(res)
 
