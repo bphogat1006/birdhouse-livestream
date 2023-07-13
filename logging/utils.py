@@ -95,6 +95,7 @@ def display_motion_data():
         motion_data, motion_detected = get_motion_data()
         max_height = max(max(motion_data), 100)
         motion_data = [i/max_height for i in motion_data]
+        print(motion_detected, motion_data, flush=True) # debugging
 
         # draw graph on display
         draw.rectangle((0, 0, size, size), fill=(0, 0, 0))
