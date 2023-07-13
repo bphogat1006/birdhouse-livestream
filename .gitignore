@@ -1,6 +1,6 @@
 __pycache__
 streaming/static/captures/
-*.sqlite3
+*.sqlite3*
 *.service
 systemd
 
