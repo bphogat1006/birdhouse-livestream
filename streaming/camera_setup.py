@@ -3,6 +3,7 @@ from picamera2.encoders import H264Encoder, Quality
 from picamera2.outputs import FfmpegOutput
 from libcamera import controls, Transform
 import cv2
+import os
 from time import time
 import multiprocessing as mp
 
@@ -11,12 +12,9 @@ class Camera:
     captures_folder = 'static/captures/'
     size_main = (1080, 1920, 3)
     size_lores = (432, 768, 3)
-    default_focus_value = 2
 
     def __init__(self, camera_is_recording: mp.Value):
         self.picam2 = Picamera2()
-        fps = 20
-
         self.config = self.picam2.create_video_configuration(
             main={
                 'size': [Camera.size_main[1], Camera.size_main[0]],
@@ -31,8 +29,8 @@ class Camera:
             controls={
                 'AfMode': controls.AfModeEnum.Manual,
                 'AfRange': controls.AfRangeEnum.Full,
-                'LensPosition': Camera.default_focus_value,
-                'FrameDurationLimits': [int(1/fps*1000000), int(1/fps*1000000)]
+                'LensPosition': os.environ['CAMERA_DEFAULT_FOCUS'],
+                'FrameDurationLimits': [int(1/os.environ['CAMERA_FPS']*1000000), int(1/os.environ['CAMERA_FPS']*1000000)]
             },
             buffer_count=1
         )
@@ -42,7 +40,7 @@ class Camera:
         self.__encoder = H264Encoder()
         self.__recording = camera_is_recording
         self.__recording_start = None
-        self.__max_recording_duration = 60*10 # 10 minutes
+        self.__max_recording_duration = 60 * os.environ['MAX_RECORDING_DURATION'] # in seconds
 
     def capture_main(self):
         request = self.picam2.capture_request()

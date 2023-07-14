@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import multiprocessing as mp
 import ctypes
@@ -61,7 +62,7 @@ def motion_detection_process(update_backsub_event, np_frame):
     
     def log_activity(motion_factor):
         # destination address to send activity log
-        dest_url = 'http://192.168.1.120:3001/log'
+        dest_url = os.environ['LOGGER_DESTINATION_URL']
 
         # send data
         try:
@@ -75,7 +76,7 @@ def motion_detection_process(update_backsub_event, np_frame):
         except requests.exceptions.ConnectionError as e:
             log_error('ConnectionError', e)
     
-    backsub = cv2.createBackgroundSubtractorMOG2(detectShadows=False, history=50)
+    backsub = cv2.createBackgroundSubtractorMOG2(detectShadows=False, history=os.environ['BACKGROUND_SUBTRACTOR_HISTORY_LENGTH'])
     while 1:
         # get camera frame
         new_frame_event.wait()
@@ -86,7 +87,7 @@ def motion_detection_process(update_backsub_event, np_frame):
         frame = cv2.GaussianBlur(frame, (21, 21), 0)
         fgmask = backsub.apply(frame)
         
-        # calculate amount of motion (ratio of white to black pixels)
+        # calculate amount of motion (ratio of white pixels)
         motion_factor = ( np.sum(fgmask)/255 / np.prod(fgmask.shape) )
 
         # send data to logging device
