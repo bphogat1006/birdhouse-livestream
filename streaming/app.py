@@ -62,8 +62,8 @@ def camera_frames_gen():
             yield (b'--frame\r\n'
                 b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-
 @app.route('/stream')
+@auth.login_required
 def stream():
     return Response(camera_frames_gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
