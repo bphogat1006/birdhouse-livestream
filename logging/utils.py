@@ -11,9 +11,9 @@ from dotenv import load_dotenv
 
 # load .env
 load_dotenv()
-os.environ['NUM_DATA_CHUNKS'] = int(os.environ['NUM_DATA_CHUNKS'] )
-os.environ['BARGRAPH_SCALE_MIN'] = int(os.environ['BARGRAPH_SCALE_MIN'])
-os.environ['MOTION_DETECTED_THRESHOLD'] = float(os.environ['MOTION_DETECTED_THRESHOLD'])
+NUM_DATA_CHUNKS = int(os.environ['NUM_DATA_CHUNKS'] )
+BARGRAPH_SCALE_MIN = int(os.environ['BARGRAPH_SCALE_MIN'])
+MOTION_DETECTED_THRESHOLD = float(os.environ['MOTION_DETECTED_THRESHOLD'])
 
 # sqlite setup
 def get_db_connection():
@@ -23,7 +23,7 @@ with get_db_connection() as conn:
 
 # generate sums for each interval over the last 24 hours
 def get_motion_data():
-    interval = timedelta(days=1/os.environ['NUM_DATA_CHUNKS']).total_seconds()
+    interval = timedelta(days=1/NUM_DATA_CHUNKS).total_seconds()
     now = time()
     t1 = now - timedelta(days=1).total_seconds()
     
@@ -58,7 +58,7 @@ def motion_detected():
     if motion_detected is None:
         motion_detected = False
     else:
-        motion_detected = motion_detected > os.environ['MOTION_DETECTED_THRESHOLD']
+        motion_detected = motion_detected > MOTION_DETECTED_THRESHOLD
     return motion_detected
 
 def display_motion_data():
@@ -100,14 +100,14 @@ def display_motion_data():
         # get data
         motion_data = get_motion_data()
         print(motion_data, flush=True) # debugging
-        max_height = max(max(motion_data), os.environ['BARGRAPH_SCALE_MIN'])
+        max_height = max(max(motion_data), BARGRAPH_SCALE_MIN)
         motion_data = [i/max_height for i in motion_data] # scale data points
 
         # draw graph on display
         draw.rectangle((0, 0, size, size), fill=(0, 0, 0))
         x = 0
         y = 75
-        w = size / os.environ['NUM_DATA_CHUNKS']
+        w = size / NUM_DATA_CHUNKS
         for h in motion_data:
             draw_rect((x, y, w, -h*y), fill=(255, 255, 255), outline=None)
             x += w

@@ -3,12 +3,8 @@ from dotenv import load_dotenv
 
 # load .env
 load_dotenv()
-os.environ['RECORDING_PROCESSING_DELAY'] = float(os.environ['RECORDING_PROCESSING_DELAY'])
-os.environ['PICTURE_PROCESSING_DELAY'] = float(os.environ['PICTURE_PROCESSING_DELAY'])
-os.environ['CAMERA_FPS'] = int(os.environ['CAMERA_FPS'])
-os.environ['CAMERA_DEFAULT_FOCUS'] = float(os.environ['CAMERA_DEFAULT_FOCUS'])
-os.environ['MAX_RECORDING_DURATION'] = int(os.environ['MAX_RECORDING_DURATION'])
-os.environ['BACKGROUND_SUBTRACTOR_HISTORY_LENGTH'] = int(os.environ['BACKGROUND_SUBTRACTOR_HISTORY_LENGTH'])
+RECORDING_PROCESSING_DELAY = float(os.environ['RECORDING_PROCESSING_DELAY'])
+PICTURE_PROCESSING_DELAY = float(os.environ['PICTURE_PROCESSING_DELAY'])
 
 import re
 import time
@@ -80,7 +76,7 @@ def stream():
 @app.route('/record', methods=['POST'])
 def record():
     toggle_recording()
-    time.sleep(os.environ['RECORDING_PROCESSING_DELAY'])
+    time.sleep(RECORDING_PROCESSING_DELAY)
     return redirect(url_for('index'))
 
 @app.route('/video', methods=['GET', 'POST'])
@@ -102,7 +98,7 @@ def view_video():
 @app.route('/take_picture', methods=['POST'])
 def take_picture():
     capture_image()
-    time.sleep(os.environ['PICTURE_PROCESSING_DELAY'])
+    time.sleep(PICTURE_PROCESSING_DELAY)
     return redirect(url_for('index'))
 
 @app.route('/picture')

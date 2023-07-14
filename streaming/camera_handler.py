@@ -7,6 +7,9 @@ from time import time, sleep
 from camera_setup import Camera
 
 
+CAMERA_DEFAULT_FOCUS = float(os.environ['CAMERA_DEFAULT_FOCUS'])
+BACKGROUND_SUBTRACTOR_HISTORY_LENGTH = int(os.environ['BACKGROUND_SUBTRACTOR_HISTORY_LENGTH'])
+
 # retrieve camera frame encoded for streaming
 def get_stream_frame():
     # get frame
@@ -30,7 +33,7 @@ np_frame = np.frombuffer(mp_frame.get_obj(), dtype=ctypes.c_ubyte).reshape(Camer
 camera_is_recording = mp.Value('B', lock=True) # 'B' = unsigned byte
 camera_is_recording.value = False
 camera_focus_value = mp.Value('f', lock=True) # 'f' = float
-camera_focus_value.value = Camera.default_focus_value
+camera_focus_value.value = CAMERA_DEFAULT_FOCUS
 
 # events
 new_frame_event = mp.Event()
@@ -76,7 +79,7 @@ def motion_detection_process(update_backsub_event, np_frame):
         except requests.exceptions.ConnectionError as e:
             log_error('ConnectionError', e)
     
-    backsub = cv2.createBackgroundSubtractorMOG2(detectShadows=False, history=os.environ['BACKGROUND_SUBTRACTOR_HISTORY_LENGTH'])
+    backsub = cv2.createBackgroundSubtractorMOG2(detectShadows=False, history=BACKGROUND_SUBTRACTOR_HISTORY_LENGTH)
     while 1:
         # get camera frame
         new_frame_event.wait()
