@@ -6,3 +6,4 @@ Flask-HTTPAuth=4.8.0
 adafruit-circuitpython-rgb-display
 spidev
 python3-pil
+python-dotenv

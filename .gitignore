@@ -3,4 +3,4 @@ streaming/static/captures/
 *.sqlite3*
 *.service
 systemd
-
+.env

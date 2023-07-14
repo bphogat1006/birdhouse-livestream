@@ -5,21 +5,25 @@ import digitalio
 import board
 from adafruit_rgb_display import st7789
 from PIL import Image, ImageDraw, ImageFont
+import os
+from dotenv import load_dotenv
 
 
-# constants
-NUM_DATA_CHUNKS = 24*2
-DB_NAME = 'bird.sqlite3'
+# load .env
+load_dotenv()
+os.environ['NUM_DATA_CHUNKS'] = int(os.environ['NUM_DATA_CHUNKS'] )
+os.environ['BARGRAPH_SCALE_MIN'] = int(os.environ['BARGRAPH_SCALE_MIN'])
+os.environ['MOTION_DETECTED_THRESHOLD'] = float(os.environ['MOTION_DETECTED_THRESHOLD'])
 
 # sqlite setup
 def get_db_connection():
-    return sqlite3.connect(DB_NAME)
+    return sqlite3.connect(os.environ['DB_NAME'])
 with get_db_connection() as conn:
     conn.execute('CREATE TABLE IF NOT EXISTS motion_logs ( time FLOAT, motion FLOAT )')
 
 # generate sums for each interval over the last 24 hours
 def get_motion_data():
-    interval = timedelta(days=1/NUM_DATA_CHUNKS).total_seconds()
+    interval = timedelta(days=1/os.environ['NUM_DATA_CHUNKS']).total_seconds()
     now = time()
     t1 = now - timedelta(days=1).total_seconds()
     
@@ -43,17 +47,19 @@ def get_motion_data():
         
         motion_data.append(motion_sum)
 
-    # check if there was motion in the last minute
-    t = now - timedelta(minutes=1).total_seconds()
+    return motion_data
+
+# check if there was motion in the last minute
+def motion_detected():
+    t = time() - timedelta(minutes=1).total_seconds()
     with get_db_connection() as conn:
         res = conn.execute('SELECT SUM(motion) FROM motion_logs WHERE time >= ?', [t])
-    thresh = 1
     motion_detected = res.fetchone()[0]
     if motion_detected is None:
         motion_detected = False
     else:
-        motion_detected = motion_detected > thresh
-    return motion_data, motion_detected
+        motion_detected = motion_detected > os.environ['MOTION_DETECTED_THRESHOLD']
+    return motion_detected
 
 def display_motion_data():
     cs_pin = digitalio.DigitalInOut(board.CE0)
@@ -92,16 +98,16 @@ def display_motion_data():
 
     while 1:
         # get data
-        motion_data, motion_detected = get_motion_data()
-        max_height = max(max(motion_data), 100)
-        motion_data = [i/max_height for i in motion_data]
-        print(motion_detected, motion_data, flush=True) # debugging
+        motion_data = get_motion_data()
+        print(motion_data, flush=True) # debugging
+        max_height = max(max(motion_data), os.environ['BARGRAPH_SCALE_MIN'])
+        motion_data = [i/max_height for i in motion_data] # scale data points
 
         # draw graph on display
         draw.rectangle((0, 0, size, size), fill=(0, 0, 0))
         x = 0
         y = 75
-        w = size / NUM_DATA_CHUNKS
+        w = size / os.environ['NUM_DATA_CHUNKS']
         for h in motion_data:
             draw_rect((x, y, w, -h*y), fill=(255, 255, 255), outline=None)
             x += w
@@ -113,7 +119,7 @@ def display_motion_data():
             draw.text((x, y), str(hours[i]), fill=(255, 255, 255), font=ImageFont.truetype('arial.ttf', size=20))
 
         # display banner if there has been any recent motion
-        if motion_detected:
+        if motion_detected():
             y = size/2 + 35
             draw_rect((0, y-45, size, 90), fill=(255,100,100))
             draw.multiline_text((size/2, y), 'MOTION\nDETECTED', anchor='mm', align='center', fill=(0,0,0), font=ImageFont.truetype('arial.ttf', size=40))

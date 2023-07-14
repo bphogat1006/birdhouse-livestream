@@ -1,4 +1,15 @@
 import os
+from dotenv import load_dotenv
+
+# load .env
+load_dotenv()
+os.environ['RECORDING_PROCESSING_DELAY'] = float(os.environ['RECORDING_PROCESSING_DELAY'])
+os.environ['PICTURE_PROCESSING_DELAY'] = float(os.environ['PICTURE_PROCESSING_DELAY'])
+os.environ['CAMERA_FPS'] = int(os.environ['CAMERA_FPS'])
+os.environ['CAMERA_DEFAULT_FOCUS'] = float(os.environ['CAMERA_DEFAULT_FOCUS'])
+os.environ['MAX_RECORDING_DURATION'] = int(os.environ['MAX_RECORDING_DURATION'])
+os.environ['BACKGROUND_SUBTRACTOR_HISTORY_LENGTH'] = int(os.environ['BACKGROUND_SUBTRACTOR_HISTORY_LENGTH'])
+
 import re
 import time
 from threading import Lock
@@ -12,13 +23,12 @@ from camera_setup import Camera
 app = Flask(__name__, static_folder='static', template_folder='templates')
 auth = HTTPBasicAuth()
 users = {
-    "poonga": generate_password_hash("bird"),
+    os.environ['BASICAUTH_USERNAME']: generate_password_hash(os.environ['BASICAUTH_PASSWORD']),
 }
 
 @auth.verify_password
 def verify_password(username, password):
-    if username in users and \
-            check_password_hash(users.get(username), password):
+    if username in users and check_password_hash(users.get(username), password):
         return username
 
 filename_pattern = r'(.+\/)+(\w+)_(\d+).(jpg|mp4)'
@@ -70,7 +80,7 @@ def stream():
 @app.route('/record', methods=['POST'])
 def record():
     toggle_recording()
-    time.sleep(1)
+    time.sleep(os.environ['RECORDING_PROCESSING_DELAY'])
     return redirect(url_for('index'))
 
 @app.route('/video', methods=['GET', 'POST'])
@@ -92,7 +102,7 @@ def view_video():
 @app.route('/take_picture', methods=['POST'])
 def take_picture():
     capture_image()
-    time.sleep(1)
+    time.sleep(os.environ['PICTURE_PROCESSING_DELAY'])
     return redirect(url_for('index'))
 
 @app.route('/picture')
