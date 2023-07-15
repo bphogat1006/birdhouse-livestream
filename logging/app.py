@@ -1,7 +1,7 @@
 from flask import Flask, Response, request
 from threading import Thread
 from time import time
-from utils import get_db_connection, get_motion_data, display_motion_data
+from utils import DBConnection, get_motion_data, display_motion_data
 
 
 # continuously update display with motion data
@@ -22,8 +22,9 @@ def log():
     motion_factor = float(request.data)
     
     # insert into db
-    with get_db_connection() as conn:
+    with DBConnection() as conn:
         conn.execute('INSERT INTO motion_logs (time, motion) VALUES (?, ?)', (time(), motion_factor))
+        conn.commit()
 
     return Response(status=200)
 

@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from time import sleep, time
+from threading import Lock
 import sqlite3
 import digitalio
 import board
@@ -16,10 +17,23 @@ BARGRAPH_SCALE_MIN = int(os.environ['BARGRAPH_SCALE_MIN'])
 MOTION_DETECTED_THRESHOLD = float(os.environ['MOTION_DETECTED_THRESHOLD'])
 
 # sqlite setup
-def get_db_connection():
-    return sqlite3.connect(os.environ['DB_NAME'])
-with get_db_connection() as conn:
+db_lock = Lock()
+class DBConnection:
+    def __init__(self) -> None:
+        pass
+
+    def __enter__(self):
+        db_lock.acquire()
+        self.conn = sqlite3.connect(os.environ['DB_NAME'])
+        return self.conn
+    
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self.conn.close()
+        db_lock.release()
+    
+with DBConnection() as conn:
     conn.execute('CREATE TABLE IF NOT EXISTS motion_logs ( time FLOAT, motion FLOAT )')
+    conn.commit()
 
 # generate sums for each interval over the last 24 hours
 def get_motion_data():
@@ -28,16 +42,17 @@ def get_motion_data():
     t1 = now - timedelta(days=1).total_seconds()
     
     # remove old logs
-    with get_db_connection() as conn:
+    with DBConnection() as conn:
         conn.execute('DELETE FROM motion_logs WHERE time < ?', [t1])
+        conn.commit()
         
     # gather 24hr motion data
     motion_data = []
     while t1 < now:
         # get sum of all logs in the given time interval
-        with get_db_connection() as conn:
+        with DBConnection() as conn:
             res = conn.execute('SELECT COUNT(motion), SUM(motion) FROM motion_logs WHERE time >= ? AND time < ?', (t1, t1+interval))
-        num_logs, motion_sum = res.fetchone()
+            num_logs, motion_sum = res.fetchone()
         t1 += interval
         
         # if no logs found for this time interval, sum is 0
@@ -52,9 +67,9 @@ def get_motion_data():
 # check if there was motion in the last minute
 def motion_detected():
     t = time() - timedelta(minutes=1).total_seconds()
-    with get_db_connection() as conn:
+    with DBConnection() as conn:
         res = conn.execute('SELECT SUM(motion) FROM motion_logs WHERE time >= ?', [t])
-    motion_detected = res.fetchone()[0]
+        motion_detected = res.fetchone()[0]
     if motion_detected is None:
         motion_detected = False
     else:
