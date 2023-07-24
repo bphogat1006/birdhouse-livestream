@@ -109,4 +109,14 @@
     </div>
 
     <br><br>
+	
+	<script>
+        function stopStreaming() {
+            let stream = document.getElementById('stream')
+            stream.src = ''
+            window.alert('Livestream automatically stops after 2 hours. Refresh page to keep streaming.')
+        }
+        let streamDuration = 1000 * 60 * 120 // 120 minutes
+        setTimeout(stopStreaming, streamDuration)
+	</script>
 {% endblock %}
