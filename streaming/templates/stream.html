@@ -110,13 +110,14 @@
 
     <br><br>
 	
-	<script>
+    <script>
         function stopStreaming() {
             let stream = document.getElementById('stream')
             stream.src = ''
-            window.alert('Livestream automatically stops after 2 hours. Refresh page to keep streaming.')
+            let reload = window.confirm('Livestream automatically stops after 30 minutes. Click OK to keep streaming.')
+            if (reload) window.location.reload()
         }
-        let streamDuration = 1000 * 60 * 120 // 120 minutes
+        let streamDuration = 1000 * 60 * 30 // 30 minutes
         setTimeout(stopStreaming, streamDuration)
-	</script>
+    </script>
 {% endblock %}
