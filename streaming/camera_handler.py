@@ -16,9 +16,6 @@ def get_stream_frame():
     new_frame_event.wait()
     new_frame_event.clear()
     frame = np_frame.copy()
-    
-    # update backsub
-    trigger_backsub_update()
 
     # return jpeg encoded frame
     flag, encoded_img = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 50])
@@ -39,7 +36,6 @@ camera_focus_value.value = CAMERA_DEFAULT_FOCUS
 new_frame_event = mp.Event()
 toggle_recording_event = mp.Event()
 capture_image_event = mp.Event()
-update_backsub_event = mp.Event()
 camera_focus_event = mp.Event()
 
 # trigger camera events
@@ -49,15 +45,12 @@ def capture_image():
 def toggle_recording():
     toggle_recording_event.set()
 
-def trigger_backsub_update():
-    update_backsub_event.set()
-
 def adjust_focus(value):
     camera_focus_value.value = value
     camera_focus_event.set()
 
 # function to run background subtraction (motion detection) in separate process
-def motion_detection_process(update_backsub_event, np_frame):
+def motion_detection_process(np_frame):
     import requests
 
     def log_error(type, description):
@@ -156,5 +149,5 @@ def camera_process(np_frame, new_frame_event, capture_image_event, toggle_record
     asyncio.run(main())
 
 # start processes
-mp.Process(target=motion_detection_process, args=(update_backsub_event, np_frame)).start()
+mp.Process(target=motion_detection_process, args=(np_frame)).start()
 mp.Process(target=camera_process, args=(np_frame, new_frame_event, capture_image_event, toggle_recording_event, camera_is_recording, camera_focus_event, camera_focus_value)).start()
