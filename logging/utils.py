@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from time import sleep, time
-from threading import Lock
+from datetime import datetime
+from threading import Thread, Lock
 import sqlite3
 import digitalio
 import board
@@ -39,21 +40,21 @@ with DBConnection() as conn:
 def get_motion_data():
     interval = timedelta(days=1/NUM_DATA_CHUNKS).total_seconds()
     now = time()
-    t1 = now - timedelta(days=1).total_seconds()
+    t = now - timedelta(days=1).total_seconds()
     
     # remove old logs
     with DBConnection() as conn:
-        conn.execute('DELETE FROM motion_logs WHERE time < ?', [t1])
+        conn.execute('DELETE FROM motion_logs WHERE time < ?', [t])
         conn.commit()
         
     # gather 24hr motion data
     motion_data = []
-    while t1 < now:
+    while t < now:
         # get sum of all logs in the given time interval
         with DBConnection() as conn:
-            res = conn.execute('SELECT COUNT(motion), SUM(motion) FROM motion_logs WHERE time >= ? AND time < ?', (t1, t1+interval))
+            res = conn.execute('SELECT COUNT(motion), SUM(motion) FROM motion_logs WHERE time >= ? AND time < ?', (t, t+interval))
             num_logs, motion_sum = res.fetchone()
-        t1 += interval
+        t += interval
         
         # if no logs found for this time interval, sum is 0
         if not num_logs:
@@ -104,6 +105,18 @@ def display_motion_data():
     backlight.value = True
     image = Image.new('RGB', (size, size))
     draw = ImageDraw.Draw(image)
+
+    def button_loop():
+        while 1:
+            if not backlight.value:
+                now = datetime.now()
+                if now.hour == 5 and now.minute == 45 and now.second < 10:
+                    backlight.value = True
+            if buttonAPressed() or buttonBPressed():
+                backlight.value = not backlight.value
+                sleep(1)
+            sleep(0.2)
+    Thread(target=button_loop).start()
 
     def draw_rect(xywh, fill=None, outline=None):
         x, y, w, h = xywh
