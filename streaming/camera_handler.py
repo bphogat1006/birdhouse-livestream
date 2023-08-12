@@ -149,5 +149,5 @@ def camera_process(np_frame, new_frame_event, capture_image_event, toggle_record
     asyncio.run(main())
 
 # start processes
-mp.Process(target=motion_detection_process, args=(np_frame)).start()
+mp.Process(target=motion_detection_process, args=(np_frame,)).start()
 mp.Process(target=camera_process, args=(np_frame, new_frame_event, capture_image_event, toggle_recording_event, camera_is_recording, camera_focus_event, camera_focus_value)).start()
