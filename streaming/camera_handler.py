@@ -78,9 +78,13 @@ def motion_detection_process(np_frame):
         new_frame_event.wait()
         new_frame_event.clear()
         frame = np_frame.copy()
-        # apply frame to cv background subtractor
-        frame = cv2.resize(frame, np.array([Camera.size_lores[1], Camera.size_lores[0]]) // 2, interpolation=cv2.INTER_NEAREST)
+        # process frame
+        mask = cv2.imread('motion_mask.jpg', cv2.IMREAD_GRAYSCALE) # mask is same resolution as lores stream
+        frame = cv2.bitwise_and(frame, frame, mask=mask)
+        new_shape = np.array([Camera.size_lores[1], Camera.size_lores[0]]) // 2
+        frame = cv2.resize(frame, new_shape, interpolation=cv2.INTER_NEAREST)
         frame = cv2.GaussianBlur(frame, (21, 21), 0)
+        # apply frame to cv background subtractor
         fgmask = backsub.apply(frame)
         
         # calculate amount of motion (ratio of white pixels)
